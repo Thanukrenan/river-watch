@@ -1879,4 +1879,157 @@ chatForm.addEventListener("submit", async function(event) {
 
 });
 
+function buildAIContext() {
+
+    const assessments = townAssessments.map(item => ({
+
+        town: item.town,
+
+        forecastPeakM3s: item.peak,
+
+        p95: item.p95,
+
+        p99: item.p99,
+
+        recommendation: item.risk,
+
+        barrierSets: item.barrierSets,
+
+        pumps: item.pumps,
+
+        sandbags: item.sandbags,
+
+        staffOnCall: item.staff,
+
+        rehearsal: item.rehearsal,
+
+        percentageAboveP99: item.priority
+
+    }));
+
+    return {
+
+        application: "RiverWatch",
+
+        country: "Ireland",
+
+        contextCreatedAt: new Date().toISOString(),
+
+        assessmentComplete: assessments.length === 8 &&
+            assessments.every(item =>
+                ["Normal", "Standby", "Barriers"]
+                    .includes(item.recommendation)
+            ),
+
+        riverUnit: "m³/s",
+
+        historicalPeriod: {
+            start: "2016-01-01",
+            end: "2025-12-31"
+        },
+
+        forecastPeriod: "Today and next two days",
+
+        sources: {
+
+            resources: {
+                name: "RiverWatch Google Sheet",
+                records: townResources
+            },
+
+            riverForecasts: {
+                name: "Open-Meteo Flood API",
+                model: "seamless_v4",
+                url: FLOOD_API
+            },
+
+            historicalData: {
+                name: "Open-Meteo Flood API",
+                model: "seamless_v4",
+                stations: Object.entries(historicalCache)
+                    .map(([town, data]) => ({
+                        town,
+                        observations: data.observations,
+                        latitude: data.latitude,
+                        longitude: data.longitude,
+                        retrievedAt: data.retrievedAt,
+                        sourceUrl: data.sourceUrl,
+                        p95: data.p95,
+                        p99: data.p99
+                    }))
+            },
+
+            weatherWarnings: {
+                name: "Met Éireann",
+                checkedAt: weatherCheckedAt,
+                warnings: weatherWarnings
+            }
+
+        },
+
+        townAssessments: assessments,
+
+        crewAllocation: crewPlan,
+
+        areaManagerEscalations: escalatedTowns,
+
+        historicalAnalysis: winterAnalysis,
+
+        decisionRules: {
+
+            normal: "Forecast peak below P95",
+
+            standby: "Forecast peak at or above P95 but below P99",
+
+            barriers: "Forecast peak at or above P99",
+
+            warningEscalation:
+                "Orange or red rain warning raises risk by one level",
+
+            yellowWarning:
+                "Mention warning without raising risk",
+
+            standbyActions: [
+                "Confirm staff availability",
+                "Check pumps",
+                "Stage sandbags"
+            ],
+
+            barrierDeadline: "18:00",
+
+            crewCapacity: "Maximum two towns per crew per night",
+
+            barrierPriority:
+                "Percentage above P99, then higher forecast peak",
+
+            unservedBarrierTown:
+                "Apply standby measures and escalate to Area Manager"
+
+        },
+
+        decisionAuthority: {
+
+            dutyOfficer: "Aoife Brennan",
+
+            approvalDeadline: "16:00",
+
+            automaticDispatch: false
+
+        },
+
+        limitations: [
+            "Academic decision-support prototype",
+            "Independent river station validation pending",
+            "Historical exceedances are not confirmed flood incidents",
+            "Missing data must not be interpreted as normal risk",
+            "Human approval is required"
+        ],
+
+        disclaimer:
+            "AI can make mistakes; a person makes the final decision."
+
+    };
+
+}
+
 loadGoogleSheet();
