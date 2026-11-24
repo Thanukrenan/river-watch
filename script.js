@@ -237,8 +237,8 @@ const riverStations = {
 
     "Fermoy": {
         river: "Blackwater",
-        latitude: 52.138,
-        longitude: -8.275
+        latitude: 52.175003,
+        longitude: -8.274994
     },
 
     "Mallow": {
@@ -249,8 +249,8 @@ const riverStations = {
 
     "Bandon": {
         river: "Bandon",
-        latitude: 51.746,
-        longitude: -8.735
+        latitude: 51.775,
+        longitude: -8.724991
     },
 
     "Enniscorthy": {
@@ -261,14 +261,14 @@ const riverStations = {
 
     "Ennis": {
         river: "Fergus",
-        latitude: 52.846,
-        longitude: -8.981
+        latitude: 52.825005,
+        longitude: -9.024994
     },
 
     "Athlone": {
         river: "Shannon",
-        latitude: 53.423,
-        longitude: -7.943
+        latitude: 53.425003,
+        longitude: -7.974991
     },
 
     "Carrick-on-Shannon": {
