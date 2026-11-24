@@ -400,9 +400,56 @@
             <span class="eyebrow">TRANSPARENCY & ACCOUNTABILITY</span>
             <h2>Decision history</h2>
 
-            <div id="decision-history">
-                <p>No decisions recorded yet.</p>
-            </div>
+            
+<div id="decision-history">
+
+    <h3>Duty Officer Decision</h3>
+
+    <p>
+        Responsible officer: Aoife Brennan |
+        Decision deadline: 16:00
+    </p>
+
+    <form id="decision-form">
+
+        <label for="officer-decision">
+            Decision
+        </label>
+
+        <select id="officer-decision" required>
+            <option value="">Select decision</option>
+            <option value="Approve">Approve plan</option>
+            <option value="Modify">Modify plan</option>
+            <option value="Reject">Reject plan</option>
+        </select>
+
+        <label for="decision-reason">
+            Reason for decision
+        </label>
+
+        <textarea
+            id="decision-reason"
+            rows="3"
+            placeholder="Explain your decision and any required changes..."
+            required
+        ></textarea>
+
+        <button type="submit">
+            Record Decision
+        </button>
+
+    </form>
+
+    <div id="decision-records">
+        <p>No decisions recorded yet.</p>
+    </div>
+
+    <p>
+        AI can make mistakes; a person makes the final decision.
+    </p>
+
+</div>
+
         </section>
 
         <footer class="main-footer">
