@@ -259,7 +259,7 @@ svg {
             rgba(20, 39, 29, 0.55),
             rgba(20, 39, 29, 0.18)
         ),
-        url('river-landscape.jpg');
+        url('river-landscape.png.png');
     background-size: cover;
     background-position: center;
     display: flex;
