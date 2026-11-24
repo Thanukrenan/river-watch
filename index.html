@@ -80,16 +80,38 @@
     <main class="main-content" id="overview">
 
         <header class="topbar">
-            <div>
-                <p class="eyebrow">ENVIRONMENTAL INTELLIGENCE</p>
-                <h2>Overview</h2>
-            </div>
 
-            <div class="system-status">
-                <span class="status-dot"></span>
-                <span id="system-status">Awaiting data</span>
-            </div>
-        </header>
+    <div>
+        <p class="eyebrow">ENVIRONMENTAL INTELLIGENCE</p>
+        <h2>Overview</h2>
+
+        <div class="dashboard-date">
+            <i data-lucide="calendar-days"></i>
+            <span id="current-date"></span>
+        </div>
+    </div>
+
+    <div class="dashboard-meta">
+
+        <div class="live-clock">
+            <i data-lucide="clock"></i>
+            <span id="current-time">--:--:--</span>
+        </div>
+
+        <small>Irish local time</small>
+
+        <div class="system-status">
+            <span class="status-dot"></span>
+            <span id="system-status">Awaiting data</span>
+        </div>
+
+        <small id="data-refresh-time">
+            Last successful refresh: --
+        </small>
+
+    </div>
+
+</header>
 
         <!-- Landscape Hero -->
         <section class="hero">
