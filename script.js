@@ -145,6 +145,8 @@ await renderRiverData();
 
        allocateCrews();
 
+renderHistoricalInsights();
+
 console.log("Google Sheet connected:", townResources);
 
     } catch (error) {
@@ -1209,4 +1211,346 @@ function analyseWinterFloods() {
     );
 
 }
+
+// ========================================
+// HYDROLOGICAL ARCHIVE — DISPLAY ANALYTICS
+// ========================================
+
+let winterAnalysis = [];
+
+function renderHistoricalInsights() {
+
+    const priority = document.getElementById("archive-priority");
+
+    if (Object.keys(historicalCache).length !== 8) {
+        priority.textContent =
+            "Incomplete historical data. Study recommendation unavailable.";
+        return;
+    }
+
+    if (winterAnalysis.length === 0) {
+        winterAnalysis = analyseWinterFloods();
+    }
+
+    const results = winterAnalysis;
+    const top = results[0];
+
+    const leaders = results.filter(
+        town => town.totalEvents === top.totalEvents
+    );
+
+    const totalDays = top.winters.reduce(
+        (sum, winter) => sum + winter.floodDays, 0
+    );
+
+    const percentageChange = top.firstFour > 0
+        ? ((top.lastFour - top.firstFour) /
+            top.firstFour * 100).toFixed(1)
+        : null;
+
+    const changeLabel = percentageChange === null
+        ? "N/A"
+        : (Number(percentageChange) > 0 ? "+" : "") +
+            percentageChange + "%";
+
+    const resource = townResources.find(
+        town => town.town === top.town
+    );
+
+    // Priority town card
+
+    priority.innerHTML = `
+        <span class="archive-eyebrow">
+            PROVISIONAL FLOOD DEFENCE STUDY PRIORITY
+        </span>
+
+        <h3>${leaders.map(t => t.town).join(" / ")}</h3>
+
+        <p>${riverStations[top.town].river} River
+            · County ${resource?.county || "Unknown"}</p>
+
+        <div class="archive-metrics">
+
+            <div class="archive-metric">
+                <strong>${top.totalEvents}</strong>
+                <span>Historical events</span>
+            </div>
+
+            <div class="archive-metric">
+                <strong>${totalDays}</strong>
+                <span>Threshold exceedance days</span>
+            </div>
+
+            <div class="archive-metric">
+                <strong>${changeLabel}</strong>
+                <span>Change between comparison periods</span>
+            </div>
+
+        </div>
+
+        <p style="margin-top:20px;font-size:12px">
+            ${leaders.length > 1
+                ? "Joint priority. Metrics shown for " + top.town + "."
+                : "Highest historical event frequency among monitored towns."}
+            River validation pending.
+        </p>
+    `;
+
+    // Historical ranking
+
+    const ranking =
+        document.getElementById("historical-ranking");
+
+    const maximum = Math.max(
+        1, ...results.map(town => town.totalEvents)
+    );
+
+    ranking.innerHTML = results.map(town => `
+
+        <div class="archive-rank-row">
+
+            <span>${town.town}</span>
+
+            <div class="archive-bar-track">
+                <div
+                    class="archive-bar ${
+                        town.totalEvents === top.totalEvents
+                        ? "leading" : ""
+                    }"
+                    style="width:${
+                        town.totalEvents / maximum * 100
+                    }%">
+                </div>
+            </div>
+
+            <strong>${town.totalEvents}</strong>
+
+        </div>
+
+    `).join("");
+
+    // Town selection
+
+    const select =
+        document.getElementById("archive-town-select");
+
+    const previousSelection = select.value;
+
+    select.innerHTML = results.map(town => `
+        <option value="${town.town}">
+            ${town.town}
+        </option>
+    `).join("");
+
+    select.value = results.some(
+        town => town.town === previousSelection
+    ) ? previousSelection : top.town;
+
+    select.onchange = () => {
+        renderWinterTimeline(select.value);
+    };
+
+    renderWinterTimeline(select.value);
+
+    // Emerging historical trend
+
+    const emerging = [...results].sort(
+        (a, b) => b.change - a.change
+    )[0];
+
+    document.getElementById("archive-trend").innerHTML = `
+
+        <span class="archive-eyebrow">
+            AN EMERGING PATTERN
+        </span>
+
+        <h3>${emerging.town}</h3>
+
+        <p>
+            ${emerging.change > 0
+                ? "Recorded the largest increase in event frequency."
+                : "No increase in event frequency was identified."}
+            The count changed from
+            <strong>${emerging.firstFour} events</strong>
+            in the first four winters to
+            <strong>${emerging.lastFour} events</strong>
+            in the last four winters.
+        </p>
+
+    `;
+
+    // Comparison table
+
+    document.getElementById(
+        "historical-comparison"
+    ).innerHTML = results.map(town => `
+
+        <tr>
+            <td>${town.town}</td>
+            <td>${town.firstFour}</td>
+            <td>${town.lastFour}</td>
+
+            <td class="${
+                town.change > 0
+                    ? "archive-increase"
+                    : town.change < 0
+                        ? "archive-decrease" : ""
+            }">
+                ${town.change > 0 ? "+" : ""}${town.change}
+            </td>
+        </tr>
+
+    `).join("");
+
+}
+
+
+// ========================================
+// INTERACTIVE WINTER TIMELINE
+// ========================================
+
+function renderWinterTimeline(townName) {
+
+    const town = winterAnalysis.find(
+        item => item.town === townName
+    );
+
+    if (!town) return;
+
+    const width = 480;
+    const height = 260;
+    const left = 38;
+    const right = 24;
+    const top = 30;
+    const bottom = 45;
+
+    const chartWidth = width - left - right;
+    const chartHeight = height - top - bottom;
+
+    const maxEvents = Math.max(
+        5, ...town.winters.map(w => w.events)
+    );
+
+    const points = town.winters.map((winter, index) => ({
+
+        x: left + index * chartWidth /
+            (town.winters.length - 1),
+
+        y: top + chartHeight -
+            (winter.events / maxEvents) * chartHeight,
+
+        events: winter.events,
+        winter: winter.winter,
+        floodDays: winter.floodDays
+
+    }));
+
+    const line = points.map(
+        point => `${point.x},${point.y}`
+    ).join(" ");
+
+    const area = `
+        ${left},${top + chartHeight}
+        ${line}
+        ${width - right},${top + chartHeight}
+    `;
+
+    let grid = "";
+
+    for (let i = 0; i <= maxEvents; i++) {
+
+        const y = top + chartHeight -
+            i / maxEvents * chartHeight;
+
+        grid += `
+            <line
+                x1="${left}" y1="${y}"
+                x2="${width - right}" y2="${y}"
+                stroke="#E5DBCD"
+                stroke-dasharray="4 4"
+            />
+
+            <text
+                x="24" y="${y + 4}"
+                font-size="11"
+                text-anchor="middle"
+                fill="#786E61"
+            >${i}</text>
+        `;
+    }
+
+    document.getElementById("winter-timeline").innerHTML = `
+
+        <svg viewBox="0 0 ${width} ${height}"
+             role="img"
+             aria-label="${townName} winter event timeline">
+
+            ${grid}
+
+            <polygon
+                points="${area}"
+                fill="#B58A49"
+                opacity="0.13"
+            />
+
+            <polyline
+                points="${line}"
+                fill="none"
+                stroke="#B58A49"
+                stroke-width="3"
+                stroke-linejoin="round"
+            />
+
+            ${points.map(point => `
+
+                <circle
+                    cx="${point.x}"
+                    cy="${point.y}"
+                    r="5"
+                    fill="${
+                        point.events === maxEvents
+                        ? "#B66D50" : "#B58A49"
+                    }"
+                    stroke="#FFFAF2"
+                    stroke-width="2"
+                >
+                    <title>
+                        ${point.winter}:
+                        ${point.events} events,
+                        ${point.floodDays} exceedance days
+                    </title>
+                </circle>
+
+                <text
+                    x="${point.x}"
+                    y="${point.y - 12}"
+                    font-size="12"
+                    text-anchor="middle"
+                    fill="#263747"
+                >${point.events}</text>
+
+                <text
+                    x="${point.x}"
+                    y="${height - 20}"
+                    font-size="10"
+                    text-anchor="middle"
+                    fill="#786E61"
+                >${
+                    point.winter.slice(2, 4) + "/" +
+                    point.winter.slice(-2)
+                }</text>
+
+            `).join("")}
+
+        </svg>
+
+        <p style="text-align:center;margin:10px 0">
+            ${town.totalEvents} events across nine winters
+            · P99: ${town.p99.toFixed(2)} m³/s
+        </p>
+
+    `;
+
+}
+
 loadGoogleSheet();
