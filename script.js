@@ -1045,9 +1045,10 @@ let townAssessments = [];
 let crewPlan = [];
 let escalatedTowns = [];
 
-function allocateCrews() {
 
-    const mallow = townResources.find(
+function calculateCrewAllocation(assessments, resources) {
+
+    const mallow = resources.find(
         town => town.town === "Mallow"
     );
 
@@ -1056,7 +1057,7 @@ function allocateCrews() {
             mallow?.notes || ""
         );
 
-    crewPlan = [
+    const crews = [
         {
             id: "crew-1",
             name: "Clonmel Crew",
@@ -1093,15 +1094,54 @@ function allocateCrews() {
         }
     ];
 
-    escalatedTowns = [];
+    const escalations = [];
 
-    const barrierDemand = townAssessments
+    const barrierDemand = assessments
         .filter(town => town.risk === "Barriers")
         .sort((a, b) =>
             (b.priority ?? -Infinity) -
             (a.priority ?? -Infinity) ||
             b.peak - a.peak
         );
+
+    // Find capacity, allowing reassignment of
+    // previously allocated towns where possible.
+
+    function assignTown(townName, visited = new Set()) {
+
+        for (const crew of crews) {
+
+            if (
+                !crew.allowed.includes(townName) ||
+                visited.has(crew.id)
+            ) {
+                continue;
+            }
+
+            visited.add(crew.id);
+
+            if (crew.assigned.length < crew.capacity) {
+
+                crew.assigned.push(townName);
+
+                return true;
+            }
+
+            for (let i = 0; i < crew.assigned.length; i++) {
+
+                const existingTown = crew.assigned[i];
+
+                if (assignTown(existingTown, visited)) {
+
+                    crew.assigned[i] = townName;
+
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 
     for (const town of barrierDemand) {
 
@@ -1110,7 +1150,7 @@ function allocateCrews() {
             town.barrierSets < 1
         ) {
 
-            escalatedTowns.push({
+            escalations.push({
                 town: town.town,
                 reason: "No available barrier set",
                 action: "Standby measures and Area Manager escalation"
@@ -1119,31 +1159,42 @@ function allocateCrews() {
             continue;
         }
 
-        const crew = crewPlan.find(crew =>
-            crew.allowed.includes(town.town) &&
-            crew.assigned.length < crew.capacity
-        );
+        if (!assignTown(town.town)) {
 
-        if (crew) {
-
-            crew.assigned.push(town.town);
-
-        } else {
-
-            escalatedTowns.push({
+            escalations.push({
                 town: town.town,
                 reason: "No eligible crew capacity",
                 action: "Standby measures and Area Manager escalation"
             });
-
         }
     }
+
+    return {
+        crews,
+        escalations
+    };
+}
+
+
+// Update the actual dashboard
+
+function allocateCrews() {
+
+    const result = calculateCrewAllocation(
+        townAssessments,
+        townResources
+    );
+
+    crewPlan = result.crews;
+
+    escalatedTowns = result.escalations;
 
     renderCrewPlan();
 
     console.table(crewPlan);
     console.table(escalatedTowns);
 }
+
 
 
 // ========================================
