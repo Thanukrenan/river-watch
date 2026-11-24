@@ -1,0 +1,357 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>RiverWatch | Irish Flood Intelligence</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-icon">
+                <i data-lucide="waves"></i>
+            </div>
+            <h1>riverwatch.</h1>
+            <p>IRISH FLOOD INTELLIGENCE</p>
+        </div>
+
+        <span class="nav-label">WORKSPACE</span>
+
+        <nav>
+            <a href="#overview" class="nav-link active">
+                <i data-lucide="layout-dashboard"></i>
+                Overview
+            </a>
+
+            <a href="#stations" class="nav-link">
+                <i data-lucide="waves"></i>
+                River Stations
+            </a>
+
+            <a href="#risk-map" class="nav-link">
+                <i data-lucide="map-pinned"></i>
+                Risk Map
+            </a>
+
+            <a href="#weather" class="nav-link">
+                <i data-lucide="cloud-rain"></i>
+                Weather Alerts
+            </a>
+
+            <a href="#crews" class="nav-link">
+                <i data-lucide="users"></i>
+                Response Teams
+            </a>
+
+            <a href="#ai-briefing" class="nav-link">
+                <i data-lucide="sparkles"></i>
+                RiverSense AI
+            </a>
+
+            <a href="#history" class="nav-link">
+                <i data-lucide="history"></i>
+                Decision History
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <i data-lucide="leaf"></i>
+            <p>Monitor. Predict. Protect.</p>
+            <small>Built for safer communities.</small>
+        </div>
+
+    </aside>
+
+    <!-- Main Dashboard -->
+    <main class="main-content" id="overview">
+
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">ENVIRONMENTAL INTELLIGENCE</p>
+                <h2>Overview</h2>
+            </div>
+
+            <div class="system-status">
+                <span class="status-dot"></span>
+                <span id="system-status">Awaiting data</span>
+            </div>
+        </header>
+
+        <!-- Landscape Hero -->
+        <section class="hero">
+            <div class="hero-content">
+                <span class="eyebrow">
+                    UNDERSTAND THE RIVER. PROTECT THE COMMUNITY.
+                </span>
+
+                <h2>Every river<br>tells a story.</h2>
+
+                <p>
+                    Predicting flood risks across Ireland.
+                    Supporting informed decisions and safer communities.
+                </p>
+
+                <a href="#stations" class="primary-button">
+                    Explore river stations
+                    <i data-lucide="arrow-up-right"></i>
+                </a>
+            </div>
+        </section>
+
+        <!-- AI Briefing -->
+        <section class="ai-briefing" id="ai-briefing">
+
+            <div class="ai-icon">
+                <i data-lucide="sparkles"></i>
+            </div>
+
+            <div class="ai-content">
+                <span class="eyebrow">INTELLIGENT DECISION SUPPORT</span>
+                <h2>RiverSense AI</h2>
+
+                <p id="ai-summary">
+                    Welcome to RiverSense. Connect river forecasts,
+                    historical thresholds and weather data to generate
+                    your flood risk briefing.
+                </p>
+
+                <button id="ask-ai" class="secondary-button">
+                    Ask RiverSense
+                    <i data-lucide="arrow-right"></i>
+                </button>
+            </div>
+
+        </section>
+
+        <!-- Summary Cards -->
+        <section class="summary-grid">
+
+            <article class="stat-card">
+                <i data-lucide="waves"></i>
+                <p>Monitored Towns</p>
+                <h2 id="town-count">08</h2>
+                <small>Monitoring coverage</small>
+            </article>
+
+            <article class="stat-card">
+                <i data-lucide="users"></i>
+                <p>Response Crews</p>
+                <h2 id="crew-count">03</h2>
+                <small>Total crew capacity</small>
+            </article>
+
+            <article class="stat-card normal">
+                <i data-lucide="shield-check"></i>
+                <p>Normal Conditions</p>
+                <h2 id="normal-count">--</h2>
+                <small>Routine monitoring</small>
+            </article>
+
+            <article class="stat-card standby">
+                <i data-lucide="clock"></i>
+                <p>Standby Locations</p>
+                <h2 id="standby-count">--</h2>
+                <small>Increased preparedness</small>
+            </article>
+
+            <article class="stat-card critical">
+                <i data-lucide="siren"></i>
+                <p>Barrier Locations</p>
+                <h2 id="critical-count">--</h2>
+                <small>Priority assessment</small>
+            </article>
+
+        </section>
+
+        <!-- River Monitoring -->
+        <section class="panel" id="stations">
+
+            <div class="section-heading">
+                <div>
+                    <span class="eyebrow">MONITORING NETWORK</span>
+                    <h2>River stations</h2>
+                    <p>Forecasts, historical thresholds and recommendations.</p>
+                </div>
+
+                <button id="refresh-data" class="secondary-button">
+                    <i data-lucide="refresh-cw"></i>
+                    Refresh
+                </button>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Town</th>
+                            <th>Forecast</th>
+                            <th>95th Percentile</th>
+                            <th>99th Percentile</th>
+                            <th>Weather Warning</th>
+                            <th>Recommendation</th>
+                            <th>Explain</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="river-table">
+                        <tr>
+                            <td colspan="7">
+                                Awaiting river monitoring data.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
+
+        <!-- Interactive Risk Map -->
+        <section class="panel" id="risk-map">
+            <span class="eyebrow">GEOGRAPHICAL INTELLIGENCE</span>
+            <h2>Ireland risk map</h2>
+            <p>Explore monitored locations and their flood risk.</p>
+
+            <div id="map" class="map-container">
+                <i data-lucide="map-pinned"></i>
+                <p>Interactive map will appear here.</p>
+            </div>
+        </section>
+
+        <!-- River Forecast Chart -->
+        <section class="panel" id="forecasts">
+            <span class="eyebrow">PREDICTIVE ANALYTICS</span>
+            <h2>River level forecasts</h2>
+
+            <label for="town-select">Select a town</label>
+            <select id="town-select">
+                <option>Awaiting monitoring data</option>
+            </select>
+
+            <div class="chart-container">
+                <canvas id="forecast-chart"></canvas>
+            </div>
+        </section>
+
+        <!-- Weather Warnings -->
+        <section class="panel" id="weather">
+            <span class="eyebrow">WEATHER INTELLIGENCE</span>
+            <h2>Met Éireann warnings</h2>
+
+            <div id="weather-warnings">
+                <p>Weather warning data not yet connected.</p>
+            </div>
+        </section>
+
+        <!-- Response Crew Allocation -->
+        <section class="panel" id="crews">
+            <span class="eyebrow">RESOURCE MANAGEMENT</span>
+            <h2>Response team allocation</h2>
+
+            <div class="crew-grid">
+
+                <article class="crew-card">
+                    <i data-lucide="users"></i>
+                    <h3>Crew 01</h3>
+                    <p id="crew-1">Not allocated</p>
+                </article>
+
+                <article class="crew-card">
+                    <i data-lucide="users"></i>
+                    <h3>Crew 02</h3>
+                    <p id="crew-2">Not allocated</p>
+                </article>
+
+                <article class="crew-card">
+                    <i data-lucide="users"></i>
+                    <h3>Crew 03</h3>
+                    <p id="crew-3">Not allocated</p>
+                </article>
+
+            </div>
+        </section>
+
+        <!-- Decision History -->
+        <section class="panel" id="history">
+            <span class="eyebrow">TRANSPARENCY & ACCOUNTABILITY</span>
+            <h2>Decision history</h2>
+
+            <div id="decision-history">
+                <p>No decisions recorded yet.</p>
+            </div>
+        </section>
+
+        <footer class="main-footer">
+            <p>RiverWatch · Irish Flood Intelligence</p>
+            <p>Academic decision-support prototype.</p>
+            <small id="last-updated">Data not yet loaded</small>
+        </footer>
+
+    </main>
+
+    <!-- Floating AI Assistant -->
+    <button class="chat-toggle" id="chat-toggle"
+            aria-label="Open RiverSense AI">
+        <i data-lucide="message-circle"></i>
+        <span>RiverSense AI</span>
+    </button>
+
+    <!-- AI Chat Panel -->
+    <section class="chat-panel" id="chat-panel" hidden>
+
+        <header class="chat-header">
+            <div>
+                <h3>RiverSense AI</h3>
+                <small>Flood intelligence assistant</small>
+            </div>
+
+            <button id="close-chat" aria-label="Close assistant">
+                <i data-lucide="x"></i>
+            </button>
+        </header>
+
+        <div class="chat-messages" id="chat-messages">
+            <div class="assistant-message">
+                Hello! I'm RiverSense. I can help you understand
+                river forecasts, flood risks and crew recommendations
+                once monitoring data is connected.
+            </div>
+        </div>
+
+        <form id="chat-form">
+            <input
+                type="text"
+                id="chat-input"
+                placeholder="Ask about flood risks..."
+                aria-label="Your question"
+                required
+            >
+
+            <button type="submit" aria-label="Send question">
+                <i data-lucide="send"></i>
+            </button>
+        </form>
+
+    </section>
+
+    <script>
+        lucide.createIcons();
+    </script>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
