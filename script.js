@@ -1933,6 +1933,27 @@ chatForm.addEventListener("submit", async function(event) {
 
         // Refresh the operational data
 
+if (checkOutOfScope(question)) {
+
+    loadingMessage.textContent =
+        "This question is outside the scope of RiverWatch.\n\n" +
+
+        "RiverWatch provides town-level river flow " +
+        "assessments and operational flood response support. " +
+
+        "It cannot predict flooding at individual properties " +
+        "or advise on coastal flooding, road closures " +
+        "or insurance matters.\n\n" +
+
+        "Please contact your local council area office " +
+        "for specific guidance.\n\n" +
+
+        "AI can make mistakes; a person makes the final decision.";
+
+    return;
+
+}
+
         await loadGoogleSheet();
 
         // Build the calculated decision context
@@ -2403,6 +2424,21 @@ function calculateHypotheticalScenario(scenario) {
         calculatedAt: new Date().toISOString()
 
     };
+
+}
+
+function checkOutOfScope(question) {
+
+    const patterns = [
+        /\b(house|home|property|properties|residence|apartment|address|eirc ode|eircode)\b/i,
+        /\b(coastal|tidal|storm surge|sea flooding)\b/i,
+        /\b(road closure|road closures|road closed|roads closed|road flooded)\b/i,
+        /\b(insurance|insurance claim|compensation)\b/i
+    ];
+
+    return patterns.some(pattern =>
+        pattern.test(question)
+    );
 
 }
 
