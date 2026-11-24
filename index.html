@@ -420,43 +420,163 @@
         <span>RiverSense AI</span>
     </button>
 
-    <!-- AI Chat Panel -->
-    <section class="chat-panel" id="chat-panel" hidden>
+   
+<!-- AI Chat Panel -->
+<section class="chat-panel" id="chat-panel" hidden>
 
-        <header class="chat-header">
-            <div>
-                <h3>RiverSense AI</h3>
-                <small>Flood intelligence assistant</small>
-            </div>
+    <header class="chat-header">
 
-            <button id="close-chat" aria-label="Close assistant">
-                <i data-lucide="x"></i>
-            </button>
-        </header>
-
-        <div class="chat-messages" id="chat-messages">
-            <div class="assistant-message">
-                Hello! I'm RiverSense. I can help you understand
-                river forecasts, flood risks and crew recommendations
-                once monitoring data is connected.
-            </div>
+        <div>
+            <h3>RiverSense AI</h3>
+            <small>Flood intelligence assistant</small>
         </div>
 
-        <form id="chat-form">
-            <input
-                type="text"
-                id="chat-input"
-                placeholder="Ask about flood risks..."
-                aria-label="Your question"
-                required
-            >
+        <div class="chat-header-actions">
 
-            <button type="submit" aria-label="Send question">
-                <i data-lucide="send"></i>
+            <button id="ai-settings-toggle"
+                    type="button"
+                    aria-label="AI settings"
+                    aria-expanded="false">
+                <i data-lucide="settings"></i>
             </button>
-        </form>
 
-    </section>
+            <button id="close-chat"
+                    type="button"
+                    aria-label="Close assistant">
+                <i data-lucide="x"></i>
+            </button>
+
+        </div>
+
+    </header>
+
+    <!-- Connection Status -->
+    <div class="ai-connection">
+
+        <span id="ai-connection-dot"></span>
+
+        <span id="ai-connection-status">
+            API connection required
+        </span>
+
+    </div>
+
+    <!-- API Settings -->
+    <div class="ai-settings" id="ai-settings" hidden>
+
+        <span class="eyebrow">CONNECTION SETTINGS</span>
+
+        <h4>Connect your AI assistant</h4>
+
+        <p>Provider: OpenAI</p>
+
+        <label for="api-key-input">
+            API secret key
+        </label>
+
+        <input
+            type="password"
+            id="api-key-input"
+            placeholder="Enter your OpenAI API key"
+            autocomplete="off"
+            spellcheck="false"
+        >
+
+        <div class="api-key-actions">
+
+            <button type="button" id="save-api-key">
+                Save key
+            </button>
+
+            <button type="button" id="forget-api-key">
+                Forget key
+            </button>
+
+        </div>
+
+        <p class="api-security-note">
+            Your key is stored for this browser session only.
+            It is never included in the GitHub repository.
+            Browser-based keys are intended for this academic
+            prototype, not production use.
+        </p>
+
+        <div class="ai-usage-grid">
+
+            <div>
+                <small>Questions answered</small>
+                <strong id="ai-question-count">0</strong>
+            </div>
+
+            <div>
+                <small>Estimated API cost</small>
+                <strong id="ai-total-cost">$0.0000</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Chat Messages -->
+    <div class="chat-messages" id="chat-messages">
+
+        <div class="assistant-message">
+            Hello! I'm RiverSense, your Irish flood
+            intelligence assistant.
+
+            I can help you understand river forecasts,
+            response plans and historical flood patterns.
+
+            Connect your OpenAI API key using the
+            settings icon to get started.
+        </div>
+
+    </div>
+
+    <!-- Suggested Questions -->
+    <div class="suggested-questions">
+
+        <button type="button" class="suggested-question">
+            What's tonight's plan?
+        </button>
+
+        <button type="button" class="suggested-question">
+            Why is Fermoy at that level?
+        </button>
+
+        <button type="button" class="suggested-question">
+            What if Clonmel reaches 150 m³/s?
+        </button>
+
+        <button type="button" class="suggested-question">
+            Flood defence study priority
+        </button>
+
+    </div>
+
+    <!-- Question Input -->
+    <form id="chat-form">
+
+        <input
+            type="text"
+            id="chat-input"
+            placeholder="Ask RiverSense..."
+            aria-label="Your question"
+            required
+        >
+
+        <button type="submit" aria-label="Send question">
+            <i data-lucide="send"></i>
+        </button>
+
+    </form>
+
+    <div class="ai-disclaimer">
+        AI can make mistakes; a person makes the final decision.
+    </div>
+
+</section>
+
 
     <script>
         lucide.createIcons();
