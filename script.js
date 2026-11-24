@@ -1943,6 +1943,33 @@ chatForm.addEventListener("submit", async function(event) {
 
         if (!context.assessmentComplete) {
 
+const hypothetical = parseHypotheticalQuestion(question);
+
+if (hypothetical) {
+
+    if (hypothetical.error) {
+
+        loadingMessage.textContent = hypothetical.error;
+
+        return;
+
+    }
+
+    const scenario =
+        calculateHypotheticalScenario(hypothetical);
+
+    if (scenario.error) {
+
+        loadingMessage.textContent = scenario.error;
+
+        return;
+
+    }
+
+    context.hypotheticalScenario = scenario;
+
+}
+
             loadingMessage.textContent =
                 "RiverSense cannot provide a reliable " +
                 "operational assessment because some river " +
@@ -2236,6 +2263,145 @@ function parseHypotheticalQuestion(question) {
         hypotheticalFlow: flow,
         unit: "m³/s",
         mode: "Hypothetical scenario"
+    };
+
+}
+
+function calculateHypotheticalScenario(scenario) {
+
+    const original = townAssessments.find(
+        item => item.town === scenario.town
+    );
+
+    const resources = townResources.find(
+        item => item.town === scenario.town
+    );
+
+    if (!original || !resources) {
+
+        return {
+            error: "Required town data is unavailable."
+        };
+
+    }
+
+    const flow = scenario.hypotheticalFlow;
+
+    const baseRisk = calculateRisk(
+        flow,
+        original.p95,
+        original.p99
+    );
+
+    let finalRisk = baseRisk;
+
+    const warning = getTownWarning(resources);
+
+    const warningLevel =
+        typeof warning === "string"
+            ? warning.toLowerCase()
+            : String(warning?.level || "").toLowerCase();
+
+    if (
+        warningLevel === "orange" ||
+        warningLevel === "red"
+    ) {
+
+        if (baseRisk === "Normal") {
+
+            finalRisk = "Standby";
+
+        } else if (baseRisk === "Standby") {
+
+            finalRisk = "Barriers";
+
+        }
+    }
+
+    // Create a separate scenario assessment
+
+    const scenarioAssessments = townAssessments.map(
+        item => ({ ...item })
+    );
+
+    const target = scenarioAssessments.find(
+        item => item.town === scenario.town
+    );
+
+    target.peak = flow;
+
+    target.risk = finalRisk;
+
+    target.priority =
+        ((flow - original.p99) / original.p99) * 100;
+
+    // Recalculate crew allocation without
+    // modifying the live dashboard
+
+    const allocation = calculateCrewAllocation(
+        scenarioAssessments,
+        townResources
+    );
+
+    const assignedCrew = allocation.crews.find(
+        crew => crew.assigned.includes(scenario.town)
+    );
+
+    const escalation = allocation.escalations.find(
+        item => item.town === scenario.town
+    );
+
+    return {
+
+        mode: "Hypothetical scenario",
+
+        town: scenario.town,
+
+        river: resources.river,
+
+        unit: "m³/s",
+
+        currentEffectivePeak: original.peak,
+
+        hypotheticalFlow: flow,
+
+        p95: original.p95,
+
+        p99: original.p99,
+
+        currentRecommendation: original.risk,
+
+        hypotheticalBaseRisk: baseRisk,
+
+        hypotheticalFinalRisk: finalRisk,
+
+        weatherWarning: warning,
+
+        percentageAboveP99: target.priority,
+
+        resources: {
+            barrierSets: original.barrierSets,
+            pumps: original.pumps,
+            sandbags: original.sandbags,
+            staffOnCall: original.staff
+        },
+
+        assignedCrew: assignedCrew?.name || null,
+
+        escalation: escalation || null,
+
+        revisedCrewAllocation: allocation.crews,
+
+        revisedEscalations: allocation.escalations,
+
+        dashboardModified: false,
+
+        googleSheetModified: false,
+
+        approvalRequired: true,
+
+        calculatedAt: new Date().toISOString()
+
     };
 
 }
