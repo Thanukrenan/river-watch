@@ -1794,4 +1794,89 @@ function updateAIUsage(usage) {
 
 checkAIConnection();
 
+const chatForm = document.getElementById("chat-form");
+const chatInput = document.getElementById("chat-input");
+const chatMessages = document.getElementById("chat-messages");
+
+let aiRequestInProgress = false;
+
+// Display chat messages
+
+function addChatMessage(message, role) {
+
+    const messageElement = document.createElement("div");
+
+    messageElement.className =
+        role === "user"
+            ? "user-message"
+            : "assistant-message";
+
+    messageElement.textContent = message;
+
+    chatMessages.appendChild(messageElement);
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    return messageElement;
+
+}
+
+// Enable or disable the chat input
+
+function setChatLoading(isLoading) {
+
+    aiRequestInProgress = isLoading;
+
+    chatInput.disabled = isLoading;
+
+    const submitButton = chatForm.querySelector(
+        'button[type="submit"]'
+    );
+
+    if (submitButton) {
+        submitButton.disabled = isLoading;
+    }
+
+    document.querySelectorAll(".suggested-question")
+        .forEach(button => {
+            button.disabled = isLoading;
+        });
+
+}
+
+// Handle question submission
+
+chatForm.addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+    const question = chatInput.value.trim();
+
+    if (!question || aiRequestInProgress) {
+        return;
+    }
+
+    if (question.length > 500) {
+
+        addChatMessage(
+            "Please keep your question within 500 characters.",
+            "assistant"
+        );
+
+        return;
+
+    }
+
+    addChatMessage(question, "user");
+
+    chatInput.value = "";
+
+    addChatMessage(
+        "Your question has been received. " +
+        "Live river data integration is currently being configured.",
+        "assistant"
+    );
+
+});
+
 loadGoogleSheet();
