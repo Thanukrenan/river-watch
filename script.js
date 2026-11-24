@@ -1553,4 +1553,70 @@ function renderWinterTimeline(townName) {
 
 }
 
+// ========================================
+// RIVERSENSE AI — CHAT CONTROLS
+// ========================================
+
+const chatPanel = document.getElementById("chat-panel");
+const chatToggle = document.getElementById("chat-toggle");
+const askAIButton = document.getElementById("ask-ai");
+const closeChat = document.getElementById("close-chat");
+
+function openRiverSense() {
+    chatPanel.hidden = false;
+}
+
+function closeRiverSense() {
+    chatPanel.hidden = true;
+}
+
+chatToggle.addEventListener("click", openRiverSense);
+
+askAIButton.addEventListener("click", openRiverSense);
+
+closeChat.addEventListener("click", closeRiverSense);
+
+
+// ========================================
+// AI SETTINGS TOGGLE
+// ========================================
+
+const settingsToggle =
+    document.getElementById("ai-settings-toggle");
+
+const aiSettings =
+    document.getElementById("ai-settings");
+
+settingsToggle.addEventListener("click", () => {
+
+    aiSettings.hidden = !aiSettings.hidden;
+
+    settingsToggle.setAttribute(
+        "aria-expanded",
+        String(!aiSettings.hidden)
+    );
+
+});
+
+
+// ========================================
+// SUGGESTED QUESTIONS
+// ========================================
+
+document.querySelectorAll(".suggested-question")
+    .forEach(button => {
+
+        button.addEventListener("click", () => {
+
+            const input =
+                document.getElementById("chat-input");
+
+            input.value = button.textContent.trim();
+
+            input.focus();
+
+        });
+
+    });
+
 loadGoogleSheet();
