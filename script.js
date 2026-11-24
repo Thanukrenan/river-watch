@@ -228,11 +228,55 @@ const FLOOD_API =
     "https://flood-api.open-meteo.com/v1/flood";
 
 const riverStations = {
+
     "Clonmel": {
         river: "Suir",
-        latitude: 52.35,
-        longitude: -7.70
+        latitude: 52.35152,
+        longitude: -7.694598
+    },
+
+    "Fermoy": {
+        river: "Blackwater",
+        latitude: 52.138,
+        longitude: -8.275
+    },
+
+    "Mallow": {
+        river: "Blackwater",
+        latitude: 52.133,
+        longitude: -8.640
+    },
+
+    "Bandon": {
+        river: "Bandon",
+        latitude: 51.746,
+        longitude: -8.735
+    },
+
+    "Enniscorthy": {
+        river: "Slaney",
+        latitude: 52.502,
+        longitude: -6.566
+    },
+
+    "Ennis": {
+        river: "Fergus",
+        latitude: 52.846,
+        longitude: -8.981
+    },
+
+    "Athlone": {
+        river: "Shannon",
+        latitude: 53.423,
+        longitude: -7.943
+    },
+
+    "Carrick-on-Shannon": {
+        river: "Shannon",
+        latitude: 53.944,
+        longitude: -8.096
     }
+
 };
 
 const historicalCache = {};
@@ -387,4 +431,49 @@ async function testClonmel() {
     }
 }
 
-testClonmel();
+async function testAllStations() {
+
+    const results = [];
+
+    for (const town of Object.keys(riverStations)) {
+
+        try {
+
+            const history = await loadHistoricalData(town);
+            const forecast = await loadRiverForecast(town);
+
+            const mean =
+                history.discharge.reduce((a, b) => a + b, 0)
+                / history.observations;
+
+            const sameGrid =
+                history.latitude === forecast.latitude &&
+                history.longitude === forecast.longitude;
+
+            results.push({
+                Town: town,
+                River: riverStations[town].river,
+                Observations: history.observations,
+                Mean: mean.toFixed(2),
+                P95: history.p95.toFixed(2),
+                P99: history.p99.toFixed(2),
+                Peak: forecast.peak.toFixed(2),
+                Latitude: forecast.latitude,
+                Longitude: forecast.longitude,
+                GridMatch: sameGrid ? "Yes" : "No"
+            });
+
+        } catch (error) {
+
+            results.push({
+                Town: town,
+                Error: error.message
+            });
+
+        }
+    }
+
+    console.table(results);
+}
+
+testAllStations();
