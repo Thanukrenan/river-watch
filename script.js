@@ -219,10 +219,6 @@ function renderTownResources() {
 document.getElementById("refresh-data")
     .addEventListener("click", loadGoogleSheet);
 
-
-// Load spreadsheet when website opens
-
-loadGoogleSheet();
 // ========================================
 // RIVER DISCHARGE API
 // ========================================
@@ -1138,3 +1134,79 @@ function renderCrewPlan() {
         summary.appendChild(alert);
     });
 }
+function analyseWinterFloods() {
+
+    const results = [];
+
+    for (const [town, history] of Object.entries(historicalCache)) {
+
+        const winters = [];
+
+        for (let year = 2016; year <= 2024; year++) {
+
+            const start = `${year}-10-01`;
+            const end = `${year + 1}-03-31`;
+
+            let events = 0;
+            let floodDays = 0;
+            let inEvent = false;
+
+            history.dates.forEach((date, index) => {
+
+                if (date < start || date > end) return;
+
+                const flow = history.discharge[index];
+
+                if (flow >= history.p99) {
+
+                    floodDays++;
+
+                    if (!inEvent) {
+                        events++;
+                        inEvent = true;
+                    }
+
+                } else {
+                    inEvent = false;
+                }
+
+            });
+
+            winters.push({
+                winter: `${year}/${year + 1}`,
+                events: events,
+                floodDays: floodDays
+            });
+
+        }
+
+        const totalEvents = winters.reduce(
+            (sum, winter) => sum + winter.events, 0
+        );
+
+        const firstFour = winters.slice(0, 4).reduce(
+            (sum, winter) => sum + winter.events, 0
+        );
+
+        const lastFour = winters.slice(-4).reduce(
+            (sum, winter) => sum + winter.events, 0
+        );
+
+        results.push({
+            town: town,
+            p99: history.p99,
+            totalEvents: totalEvents,
+            firstFour: firstFour,
+            lastFour: lastFour,
+            change: lastFour - firstFour,
+            winters: winters
+        });
+
+    }
+
+    return results.sort(
+        (a, b) => b.totalEvents - a.totalEvents
+    );
+
+}
+loadGoogleSheet();
