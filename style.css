@@ -251,17 +251,20 @@ svg {
     border-radius: 18px;
     overflow: hidden;
     position: relative;
-    background-color: var(--forest);
-    background-image:
-        linear-gradient(
-            90deg,
-            rgba(20, 39, 29, 0.94),
-            rgba(20, 39, 29, 0.55),
-            rgba(20, 39, 29, 0.18)
-        ),
-        url('river-landscape.png.png');
-    background-size: cover;
-    background-position: center;
+   background-color: var(--forest);
+
+background-image:
+    linear-gradient(
+        90deg,
+        rgba(20, 39, 29, 0.92) 0%,
+        rgba(20, 39, 29, 0.65) 35%,
+        rgba(20, 39, 29, 0.15) 65%,
+        rgba(20, 39, 29, 0.02) 100%
+    ),
+    url('./river-landscape.png.png');
+
+background-size: cover;
+background-position: center 60%;
     display: flex;
     align-items: center;
     margin-bottom: 25px;
