@@ -1619,4 +1619,76 @@ document.querySelectorAll(".suggested-question")
 
     });
 
+const AI_BACKEND_URL =
+    "https://river-watch-ai.dadithanusha.workers.dev";
+
+let aiQuestionCount = 0;
+let aiTotalCost = 0;
+let aiConnected = false;
+
+async function checkAIConnection() {
+
+    const status = document.getElementById(
+        "ai-connection-status"
+    );
+
+    const dot = document.getElementById(
+        "ai-connection-dot"
+    );
+
+    try {
+
+        const response = await fetch(AI_BACKEND_URL, {
+            cache: "no-store"
+        });
+
+        if (!response.ok) {
+            throw new Error("Backend unavailable");
+        }
+
+        const data = await response.json();
+
+        aiConnected =
+            data.status === "online" &&
+            data.keyConfigured === true;
+
+        if (!aiConnected) {
+            throw new Error("AI not configured");
+        }
+
+        status.textContent = "AI service connected";
+        status.style.color = "#15803d";
+        dot.style.backgroundColor = "#22c55e";
+
+    } catch (error) {
+
+        aiConnected = false;
+
+        status.textContent = "AI service unavailable";
+        status.style.color = "#dc2626";
+        dot.style.backgroundColor = "#ef4444";
+
+    }
+}
+
+function updateAIUsage(usage) {
+
+    aiQuestionCount++;
+
+    aiTotalCost += Number(
+        usage?.estimatedCostUSD || 0
+    );
+
+    document.getElementById(
+        "ai-question-count"
+    ).textContent = aiQuestionCount;
+
+    document.getElementById(
+        "ai-total-cost"
+    ).textContent = "$" + aiTotalCost.toFixed(4);
+
+}
+
+checkAIConnection();
+
 loadGoogleSheet();
