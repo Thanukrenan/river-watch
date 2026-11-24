@@ -144,7 +144,7 @@ await renderRiverData();
         updateRefreshTimestamp();
 
        document.getElementById("ai-summary").textContent =
-    "Preliminary river flow assessments are displayed. Independent river validation, weather warnings and resource overrides are pending.";
+    "River flow and weather assessments completed where data is available. River validation and crew allocation are pending.";
         console.log("Google Sheet connected:", townResources);
 
     } catch (error) {
@@ -530,25 +530,86 @@ async function renderRiverData() {
                 throw new Error("Grid mismatch");
             }
 
-            const risk = calculateRisk(
-                forecast.peak,
-                history.p95,
-                history.p99
-            );
+           const override =
+    String(town.flow_override_m3s || "").trim();
+
+const isRehearsal = override !== "";
+
+const effectivePeak = isRehearsal
+    ? Number(override)
+    : forecast.peak;
+
+if (
+    !Number.isFinite(effectivePeak) ||
+    effectivePeak < 0
+) {
+    throw new Error("Invalid flow override");
+}
+
+const baseRisk = calculateRisk(
+    effectivePeak,
+    history.p95,
+    history.p99
+);
+
+const warning = getTownWarning(town);
+
+let risk = baseRisk;
+
+if (
+    warning.level === "orange" ||
+    warning.level === "red"
+) {
+
+    if (risk === "Normal") {
+        risk = "Standby";
+    } else if (risk === "Standby") {
+        risk = "Barriers";
+    }
+}
+
+if (warning.level === "unknown") {
+    risk = "Unknown";
+}
+
+const rehearsal =
+    isRehearsal ||
+    warning.source === "Rehearsal";
+
+const warningLabel =
+    warning.level === "none"
+        ? "No rain warning"
+        : warning.level === "unknown"
+            ? "Unavailable"
+            : warning.level.toUpperCase() + " rain";
+
+const explanation =
+    (rehearsal ? "REHEARSAL | " : "") +
+    `Base: ${baseRisk} → ${risk}` +
+    " | River validation pending";
 
             if (risk === "Normal") normal++;
             if (risk === "Standby") standby++;
             if (risk === "Barriers") barriers++;
 
             const values = [
-                `${town.town}, Co. ${town.county}`,
-                `${forecast.peak.toFixed(2)} m³/s`,
-                `${history.p95.toFixed(2)} m³/s`,
-                `${history.p99.toFixed(2)} m³/s`,
-                "Not checked",
-                risk,
-                "Preliminary — flow only"
-            ];
+    `${town.town}, Co. ${town.county}`,
+
+    `${effectivePeak.toFixed(2)} m³/s` +
+        (isRehearsal ? " (Rehearsal)" : ""),
+
+    `${history.p95.toFixed(2)} m³/s`,
+
+    `${history.p99.toFixed(2)} m³/s`,
+
+    warningLabel +
+        (warning.source === "Rehearsal"
+            ? " (Rehearsal)" : ""),
+
+    risk,
+
+    explanation
+];
 
             values.forEach((value, index) => {
 
