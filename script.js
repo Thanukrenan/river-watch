@@ -1846,6 +1846,7 @@ function setChatLoading(isLoading) {
 
 // Handle question submission
 
+
 chatForm.addEventListener("submit", async function(event) {
 
     event.preventDefault();
@@ -1864,20 +1865,119 @@ chatForm.addEventListener("submit", async function(event) {
         );
 
         return;
-
     }
 
     addChatMessage(question, "user");
 
     chatInput.value = "";
 
-    addChatMessage(
-        "Your question has been received. " +
-        "Live river data integration is currently being configured.",
+    setChatLoading(true);
+
+    const loadingMessage = addChatMessage(
+        "Refreshing RiverWatch data...",
         "assistant"
     );
 
+    try {
+
+        // Refresh the operational data
+
+        await loadGoogleSheet();
+
+        // Build the calculated decision context
+
+        const context = buildAIContext();
+
+        // Prevent advice based on incomplete data
+
+        if (!context.assessmentComplete) {
+
+            loadingMessage.textContent =
+                "RiverSense cannot provide a reliable " +
+                "operational assessment because some river " +
+                "data is currently unavailable. " +
+                "Please try again when the data sources " +
+                "are restored.";
+
+            return;
+
+        }
+
+        loadingMessage.textContent =
+            "RiverSense is analysing the latest assessments...";
+
+        // Send question and calculated context
+
+        const response = await fetch(AI_BACKEND_URL, {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                question,
+                context
+            })
+
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.error || "AI request failed"
+            );
+
+        }
+
+        if (!data.answer) {
+            throw new Error("No AI answer received");
+        }
+
+        // Display AI response
+
+        loadingMessage.textContent = data.answer;
+
+        // Update usage and estimated cost
+
+        updateAIUsage(data.usage);
+
+        console.log("RiverSense response:", {
+
+            question: question,
+
+            model: data.model,
+
+            timestamp: data.timestamp,
+
+            usage: data.usage
+
+        });
+
+    } catch (error) {
+
+        loadingMessage.textContent =
+            "RiverSense could not complete your request. " +
+            "Please try again later.";
+
+        console.error("RiverSense error:", error);
+
+    } finally {
+
+        setChatLoading(false);
+
+        chatMessages.scrollTop =
+            chatMessages.scrollHeight;
+
+        chatInput.focus();
+
+    }
+
 });
+
 
 function buildAIContext() {
 
