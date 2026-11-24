@@ -2183,4 +2183,61 @@ function buildAIContext() {
 
 }
 
+function parseHypotheticalQuestion(question) {
+
+    const isHypothetical =
+        /\b(what\s+if|suppose|hypothetical|imagine|assuming|assume)\b/i
+            .test(question);
+
+    if (!isHypothetical) {
+        return null;
+    }
+
+    const matchedTowns = Object.keys(riverStations)
+        .filter(name =>
+            question.toLowerCase()
+                .includes(name.toLowerCase())
+        );
+
+    if (matchedTowns.length !== 1) {
+
+        return {
+            error: "Please specify one RiverWatch town."
+        };
+
+    }
+
+    const town = matchedTowns[0];
+
+    const flowMatch = question.match(
+        /(-?\d+(?:\.\d+)?)\s*(?:m³\/s|m3\/s|m\^3\/s|cumecs|cubic metres per second)/i
+    );
+
+    if (!flowMatch) {
+
+        return {
+            error: "Please specify a flow value in m³/s."
+        };
+
+    }
+
+    const flow = Number(flowMatch[1]);
+
+    if (!Number.isFinite(flow) || flow < 0) {
+
+        return {
+            error: "Please enter a valid non-negative river flow."
+        };
+
+    }
+
+    return {
+        town: town,
+        hypotheticalFlow: flow,
+        unit: "m³/s",
+        mode: "Hypothetical scenario"
+    };
+
+}
+
 loadGoogleSheet();
