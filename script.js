@@ -220,3 +220,171 @@ document.getElementById("refresh-data")
 // Load spreadsheet when website opens
 
 loadGoogleSheet();
+// ========================================
+// RIVER DISCHARGE API
+// ========================================
+
+const FLOOD_API =
+    "https://flood-api.open-meteo.com/v1/flood";
+
+const riverStations = {
+    "Clonmel": {
+        river: "Suir",
+        latitude: 52.35,
+        longitude: -7.70
+    }
+};
+
+const historicalCache = {};
+
+
+// ========================================
+// PERCENTILE CALCULATION
+// ========================================
+
+function calculatePercentile(values, percentile) {
+
+    const sorted = [...values].sort((a, b) => a - b);
+
+    const index = (sorted.length - 1) * percentile;
+
+    const lower = Math.floor(index);
+    const upper = Math.ceil(index);
+
+    if (lower === upper) {
+        return sorted[lower];
+    }
+
+    return sorted[lower] +
+        (index - lower) *
+        (sorted[upper] - sorted[lower]);
+}
+
+
+// ========================================
+// HISTORICAL RIVER DISCHARGE
+// ========================================
+
+async function loadHistoricalData(town) {
+
+    if (historicalCache[town]) {
+        return historicalCache[town];
+    }
+
+    const station = riverStations[town];
+
+    const url = `${FLOOD_API}?latitude=${station.latitude}` +
+        `&longitude=${station.longitude}` +
+        `&daily=river_discharge` +
+        `&start_date=2016-01-01` +
+        `&end_date=2025-12-31` +
+        `&models=seamless_v4`;
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new Error("Historical data unavailable");
+    }
+
+    const data = await response.json();
+
+    const values = data.daily.river_discharge;
+
+    if (
+        values.length !== 3653 ||
+        !values.every(Number.isFinite) ||
+        data.daily_units.river_discharge !== "m³/s"
+    ) {
+        throw new Error("Incomplete or invalid historical data");
+    }
+
+    const result = {
+        dates: data.daily.time,
+        discharge: values,
+        observations: values.length,
+        p95: calculatePercentile(values, 0.95),
+        p99: calculatePercentile(values, 0.99),
+        latitude: data.latitude,
+        longitude: data.longitude
+    };
+
+    historicalCache[town] = result;
+
+    return result;
+}
+
+
+// ========================================
+// THREE-DAY FORECAST
+// ========================================
+
+async function loadRiverForecast(town) {
+
+    const station = riverStations[town];
+
+    const url = `${FLOOD_API}?latitude=${station.latitude}` +
+        `&longitude=${station.longitude}` +
+        `&daily=river_discharge` +
+        `&forecast_days=3` +
+        `&models=seamless_v4`;
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new Error("Forecast unavailable");
+    }
+
+    const data = await response.json();
+
+    const values = data.daily.river_discharge;
+
+    if (
+        values.length !== 3 ||
+        !values.every(Number.isFinite) ||
+        data.daily_units.river_discharge !== "m³/s"
+    ) {
+        throw new Error("Incomplete or invalid forecast");
+    }
+
+    return {
+        dates: data.daily.time,
+        discharge: values,
+        peak: Math.max(...values),
+        latitude: data.latitude,
+        longitude: data.longitude
+    };
+}
+
+
+// ========================================
+// CLONMEL DATA TEST
+// ========================================
+
+async function testClonmel() {
+
+    try {
+
+        const history = await loadHistoricalData("Clonmel");
+        const forecast = await loadRiverForecast("Clonmel");
+
+        console.table({
+            "Town": "Clonmel",
+            "River": "Suir (pending verification)",
+            "Historical observations": history.observations,
+            "95th percentile": history.p95.toFixed(2),
+            "99th percentile": history.p99.toFixed(2),
+            "Forecast peak": forecast.peak.toFixed(2),
+            "Historical grid latitude": history.latitude,
+            "Historical grid longitude": history.longitude,
+            "Forecast grid latitude": forecast.latitude,
+            "Forecast grid longitude": forecast.longitude
+        });
+
+    } catch (error) {
+
+        console.error("River data test failed:", error);
+
+    }
+}
+
+testClonmel();
