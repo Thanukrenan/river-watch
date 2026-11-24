@@ -310,13 +310,72 @@ function calculatePercentile(values, percentile) {
 // HISTORICAL RIVER DISCHARGE
 // ========================================
 
+
 async function loadHistoricalData(town) {
+
+    const station = riverStations[town];
+
+    const cacheKey =
+        `riverwatch_history_v1_${town}_` +
+        `${station.latitude}_${station.longitude}_` +
+        `2016_2025_seamless_v4`;
+
+    // 1. Check memory cache
 
     if (historicalCache[town]) {
         return historicalCache[town];
     }
 
-    const station = riverStations[town];
+    // 2. Check persistent browser cache
+
+    try {
+
+        const saved = localStorage.getItem(cacheKey);
+
+        if (saved) {
+
+            const cached = JSON.parse(saved);
+
+            if (
+                cached.discharge?.length === 3653 &&
+                cached.dates?.length === 3653 &&
+                cached.discharge.every(Number.isFinite) &&
+                cached.dates[0] === "2016-01-01" &&
+                cached.dates[3652] === "2025-12-31" &&
+                cached.unit === "m³/s" &&
+                Number.isFinite(cached.latitude) &&
+                Number.isFinite(cached.longitude)
+            ) {
+
+                cached.p95 = calculatePercentile(
+                    cached.discharge, 0.95
+                );
+
+                cached.p99 = calculatePercentile(
+                    cached.discharge, 0.99
+                );
+
+                historicalCache[town] = cached;
+
+                console.log(
+                    `${town}: Historical data loaded from cache`
+                );
+
+                return cached;
+
+            }
+
+            localStorage.removeItem(cacheKey);
+
+        }
+
+    } catch (error) {
+
+        console.warn("Historical cache unavailable:", town);
+
+    }
+
+    // 3. Download only if no valid cache exists
 
     const url = `${FLOOD_API}?latitude=${station.latitude}` +
         `&longitude=${station.longitude}` +
@@ -328,35 +387,79 @@ async function loadHistoricalData(town) {
     const response = await fetch(url);
 
     if (!response.ok) {
-        throw new Error("Historical data unavailable");
+
+        throw new Error(
+            `Historical data unavailable: HTTP ${response.status}`
+        );
+
     }
 
     const data = await response.json();
 
-    const values = data.daily.river_discharge;
+    const values = data.daily?.river_discharge;
+    const dates = data.daily?.time;
 
     if (
-        values.length !== 3653 ||
+        values?.length !== 3653 ||
+        dates?.length !== 3653 ||
         !values.every(Number.isFinite) ||
-        data.daily_units.river_discharge !== "m³/s"
+        dates[0] !== "2016-01-01" ||
+        dates[3652] !== "2025-12-31" ||
+        data.daily_units?.river_discharge !== "m³/s" ||
+        !Number.isFinite(data.latitude) ||
+        !Number.isFinite(data.longitude)
     ) {
-        throw new Error("Incomplete or invalid historical data");
+
+        throw new Error(
+            "Incomplete or invalid historical data"
+        );
+
     }
 
     const result = {
-        dates: data.daily.time,
+        dates: dates,
         discharge: values,
         observations: values.length,
         p95: calculatePercentile(values, 0.95),
         p99: calculatePercentile(values, 0.99),
         latitude: data.latitude,
-        longitude: data.longitude
+        longitude: data.longitude,
+        unit: "m³/s",
+        source: "Open-Meteo Flood API",
+        sourceUrl: url,
+        model: "seamless_v4",
+        retrievedAt: new Date().toISOString()
     };
+
+    // 4. Save to memory
 
     historicalCache[town] = result;
 
+    // 5. Save to persistent browser storage
+
+    try {
+
+        localStorage.setItem(
+            cacheKey,
+            JSON.stringify(result)
+        );
+
+        console.log(
+            `${town}: Historical data downloaded and saved`
+        );
+
+    } catch (error) {
+
+        console.warn(
+            `${town}: Unable to save persistent cache`
+        );
+
+    }
+
     return result;
+
 }
+
 
 
 // ========================================
