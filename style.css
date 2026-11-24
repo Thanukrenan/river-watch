@@ -1565,3 +1565,47 @@ tbody tr:hover {
     }
 }
 
+#decision-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+#decision-form label {
+    font-weight: 600;
+    color: #254b3c;
+}
+
+#decision-form select,
+#decision-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d4dbd0;
+    border-radius: 8px;
+    font: inherit;
+    box-sizing: border-box;
+}
+
+#decision-form button {
+    background: #254b3c;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    align-self: flex-start;
+}
+
+#decision-records {
+    margin-top: 20px;
+}
+
+.decision-record {
+    background: #f4f6ef;
+    border-left: 4px solid #254b3c;
+    padding: 15px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+}
+
