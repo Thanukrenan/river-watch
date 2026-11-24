@@ -456,43 +456,55 @@
         <span id="ai-connection-dot"></span>
 
         <span id="ai-connection-status">
-            API connection required
+           Checking AI connection...
         </span>
 
     </div>
 
     <!-- API Settings -->
-    <div class="ai-settings" id="ai-settings" hidden>
+   
+<div class="ai-settings" id="ai-settings" hidden>
 
-        <span class="eyebrow">CONNECTION SETTINGS</span>
+    <h4>RiverSense AI Connection</h4>
 
-        <h4>Connect your AI assistant</h4>
+    <p>
+        Powered by OpenAI through a secure
+        server-side connection.
+    </p>
 
-        <p>Provider: OpenAI</p>
+    <div class="ai-provider">
+        <strong>Provider:</strong> OpenAI
+    </div>
 
-        <label for="api-key-input">
-            API secret key
-        </label>
+    <div class="ai-provider">
+        <strong>Model:</strong> GPT-5.4 mini
+    </div>
 
-        <input
-            type="password"
-            id="api-key-input"
-            placeholder="Enter your OpenAI API key"
-            autocomplete="off"
-            spellcheck="false"
-        >
+    <div class="ai-provider">
+        <strong>Infrastructure:</strong> Cloudflare Workers
+    </div>
 
-        <div class="api-key-actions">
+    <div class="ai-usage-grid">
 
-            <button type="button" id="save-api-key">
-                Save key
-            </button>
-
-            <button type="button" id="forget-api-key">
-                Forget key
-            </button>
-
+        <div>
+            <span>Questions asked</span>
+            <strong id="ai-question-count">0</strong>
         </div>
+
+        <div>
+            <span>Session API cost</span>
+            <strong id="ai-total-cost">$0.0000</strong>
+        </div>
+
+    </div>
+
+    <p class="ai-settings-note">
+        Your AI connection is managed securely
+        through RiverWatch. No personal API key
+        is required.
+    </p>
+
+</div>
 
         <p class="api-security-note">
             Your key is stored for this browser session only.
