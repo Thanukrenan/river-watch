@@ -143,9 +143,9 @@ await renderRiverData();
 
         updateRefreshTimestamp();
 
-       document.getElementById("ai-summary").textContent =
-    allocateCrews();
-        console.log("Google Sheet connected:", townResources);
+       allocateCrews();
+
+console.log("Google Sheet connected:", townResources);
 
     } catch (error) {
 
