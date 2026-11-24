@@ -134,6 +134,8 @@ async function loadGoogleSheet() {
 
         renderTownResources();
 
+await loadWeatherWarnings();
+
 await renderRiverData();
 
         status.textContent = "Resources connected";
@@ -607,4 +609,252 @@ async function renderRiverData() {
 
     document.getElementById("critical-count").textContent =
         String(barriers).padStart(2, "0");
+}
+// ========================================
+// MET EIREANN WEATHER WARNINGS
+// ========================================
+
+const WEATHER_API =
+    "https://www.met.ie/Open_Data/json/warning_IRELAND.json";
+
+const countyCodes = {
+    "Tipperary": "EI26",
+    "Cork": "EI04",
+    "Wexford": "EI30",
+    "Clare": "EI03",
+    "Westmeath": "EI29",
+    "Leitrim": "EI14",
+    "Roscommon": "EI24"
+};
+
+let weatherWarnings = null;
+let weatherCheckedAt = null;
+
+const warningRanks = {
+    none: 0,
+    yellow: 1,
+    orange: 2,
+    red: 3
+};
+
+async function loadWeatherWarnings() {
+
+    weatherWarnings = null;
+    weatherCheckedAt = null;
+
+    try {
+
+        const response = await fetch(WEATHER_API, {
+            cache: "no-store"
+        });
+
+        if (!response.ok) {
+            throw new Error("Weather feed unavailable");
+        }
+
+        const data = await response.json();
+
+        if (!Array.isArray(data)) {
+            throw new Error("Invalid warning format");
+        }
+
+        for (const warning of data) {
+
+            if (typeof warning.type !== "string") {
+                throw new Error("Unknown warning schema");
+            }
+
+            if (warning.type.toLowerCase() === "rain") {
+
+                if (
+                    !Array.isArray(warning.regions) ||
+                    !Number.isFinite(Date.parse(warning.onset)) ||
+                    !Number.isFinite(Date.parse(warning.expiry)) ||
+                    !["yellow", "orange", "red"].includes(
+                        String(warning.level).toLowerCase()
+                    )
+                ) {
+                    throw new Error("Invalid rain warning");
+                }
+            }
+        }
+
+        weatherWarnings = data;
+        weatherCheckedAt = new Date();
+
+    } catch (error) {
+
+        console.error("Weather warning error:", error);
+
+    }
+
+    renderWeatherWarnings();
+}
+
+
+// ========================================
+// COUNTY WARNING MATCHING
+// ========================================
+
+function getTownWarning(town) {
+
+    const override =
+        String(town.warning_override || "")
+        .trim().toLowerCase();
+
+    if (
+        override &&
+        !["orange", "red"].includes(override)
+    ) {
+        throw new Error("Invalid warning override");
+    }
+
+    if (weatherWarnings === null) {
+
+        return {
+            level: "unknown",
+            source: "Feed unavailable"
+        };
+    }
+
+    const codes = [
+        countyCodes[town.county.trim()]
+    ];
+
+    if (!codes[0]) {
+        throw new Error("Unknown county");
+    }
+
+    if (
+        town.town === "Athlone" ||
+        town.town === "Carrick-on-Shannon"
+    ) {
+        codes.push(countyCodes.Roscommon);
+    }
+
+    const now = Date.now();
+    const next48Hours = now + 48 * 60 * 60 * 1000;
+
+    let highest = "none";
+
+    for (const warning of weatherWarnings) {
+
+        const type =
+            String(warning.type).toLowerCase();
+
+        const level =
+            String(warning.level).toLowerCase();
+
+        if (type !== "rain") continue;
+
+        const onset = Date.parse(warning.onset);
+        const expiry = Date.parse(warning.expiry);
+
+        const overlaps =
+            onset <= next48Hours && expiry > now;
+
+        const matchesCounty =
+            warning.regions.some(code =>
+                codes.includes(code)
+            );
+
+        if (
+            overlaps &&
+            matchesCounty &&
+            warningRanks[level] > warningRanks[highest]
+        ) {
+            highest = level;
+        }
+    }
+
+    if (override === "orange" || override === "red") {
+
+        return {
+            level: warningRanks[override] >
+                warningRanks[highest]
+                ? override : highest,
+            source: "Rehearsal",
+            liveLevel: highest
+        };
+    }
+
+    return {
+        level: highest,
+        source: "Met Éireann"
+    };
+}
+
+
+// ========================================
+// DISPLAY OFFICIAL WEATHER WARNINGS
+// ========================================
+
+function renderWeatherWarnings() {
+
+    const container =
+        document.getElementById("weather-warnings");
+
+    if (!container) return;
+
+    container.replaceChildren();
+
+    const source = document.createElement("p");
+
+    source.textContent =
+        "Source: Met Éireann | " +
+        (weatherCheckedAt
+            ? weatherCheckedAt.toLocaleString("en-IE")
+            : "Connection unavailable");
+
+    container.appendChild(source);
+
+    if (weatherWarnings === null) {
+
+        const message = document.createElement("p");
+
+        message.textContent =
+            "Warning data unavailable. Manual verification required.";
+
+        container.appendChild(message);
+
+        return;
+    }
+
+    if (weatherWarnings.length === 0) {
+
+        const message = document.createElement("p");
+
+        message.textContent =
+            "No warnings reported by the latest official feed.";
+
+        container.appendChild(message);
+
+        return;
+    }
+
+    weatherWarnings.forEach(warning => {
+
+        const item = document.createElement("div");
+
+        const heading = document.createElement("h4");
+        heading.textContent = warning.headline;
+
+        const description = document.createElement("p");
+        description.textContent = warning.description;
+
+        const period = document.createElement("p");
+        period.textContent =
+            `${warning.onset} — ${warning.expiry}`;
+
+        const regions = document.createElement("p");
+        regions.textContent =
+            "Regions: " +
+            (Array.isArray(warning.regions)
+                ? warning.regions.join(", ")
+                : "See official feed");
+
+        item.append(heading, description, period, regions);
+
+        container.appendChild(item);
+    });
 }
