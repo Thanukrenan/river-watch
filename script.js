@@ -2442,4 +2442,147 @@ function checkOutOfScope(question) {
 
 }
 
+let decisionRecords = [];
+
+try {
+    decisionRecords = JSON.parse(
+        localStorage.getItem("riverwatch_decisions") || "[]"
+    );
+
+    if (!Array.isArray(decisionRecords)) {
+        decisionRecords = [];
+    }
+
+} catch {
+    decisionRecords = [];
+}
+
+function renderDecisionRecords() {
+
+    const container =
+        document.getElementById("decision-records");
+
+    container.replaceChildren();
+
+    if (decisionRecords.length === 0) {
+
+        container.textContent = "No decisions recorded yet.";
+
+        return;
+    }
+
+    decisionRecords.slice().reverse().forEach(record => {
+
+        const card = document.createElement("div");
+        card.className = "decision-record";
+
+        const heading = document.createElement("h4");
+        heading.textContent = record.decision;
+
+        const time = document.createElement("p");
+
+        time.textContent =
+            "Recorded: " +
+            new Date(record.timestamp).toLocaleString(
+                "en-IE",
+                { timeZone: "Europe/Dublin" }
+            );
+
+        const reason = document.createElement("p");
+        reason.textContent = "Reason: " + record.reason;
+
+        const plan = document.createElement("p");
+        plan.textContent = "Reviewed plan: " + record.plan;
+
+        card.append(heading, time, reason, plan);
+
+        container.appendChild(card);
+
+    });
+}
+
+document.getElementById("decision-form")
+    .addEventListener("submit", function(event) {
+
+        event.preventDefault();
+
+        const decision = document.getElementById(
+            "officer-decision"
+        ).value;
+
+        const reason = document.getElementById(
+            "decision-reason"
+        ).value.trim();
+
+        if (!decision || !reason) {
+            alert("Please select a decision and enter a reason.");
+            return;
+        }
+
+        const context = buildAIContext();
+
+        if (
+            !context.assessmentComplete ||
+            weatherWarnings === null
+        ) {
+
+            alert(
+                "A complete operational assessment is required " +
+                "before recording a decision."
+            );
+
+            return;
+        }
+
+        const record = {
+
+            timestamp: new Date().toISOString(),
+
+            officer: "Aoife Brennan",
+
+            decision: decision,
+
+            reason: reason,
+
+            plan: document.getElementById(
+                "ai-summary"
+            ).textContent,
+
+            townAssessments: context.townAssessments,
+
+            crewAllocation: context.crewAllocation,
+
+            escalations: context.areaManagerEscalations
+
+        };
+
+        try {
+
+            const updatedRecords = [
+                ...decisionRecords,
+                record
+            ];
+
+            localStorage.setItem(
+                "riverwatch_decisions",
+                JSON.stringify(updatedRecords)
+            );
+
+            decisionRecords = updatedRecords;
+
+        } catch {
+
+            alert("Unable to save the decision.");
+            return;
+
+        }
+
+        renderDecisionRecords();
+
+        event.target.reset();
+
+    });
+
+renderDecisionRecords();
+
 loadGoogleSheet();
