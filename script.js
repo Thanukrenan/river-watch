@@ -67,7 +67,7 @@ const SHEET_ID =
     "1n5gRGWLSWcXWpWkHaF0QRetrzkjMmL7Aam7KjoZYQzc";
 
 const SHEET_URL =
-    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=0`;
 
 let townResources = [];
 
