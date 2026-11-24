@@ -134,14 +134,15 @@ async function loadGoogleSheet() {
 
         renderTownResources();
 
+await renderRiverData();
+
         status.textContent = "Resources connected";
         statusDot.style.background = "#69876B";
 
         updateRefreshTimestamp();
 
-        document.getElementById("ai-summary").textContent =
-            "Resource data for eight Irish towns has been successfully retrieved. River forecasts and weather warnings are awaiting integration.";
-
+       document.getElementById("ai-summary").textContent =
+    "Preliminary river flow assessments are displayed. Independent river validation, weather warnings and resource overrides are pending.";
         console.log("Google Sheet connected:", townResources);
 
     } catch (error) {
@@ -476,4 +477,134 @@ async function testAllStations() {
     console.table(results);
 }
 
-testAllStations();
+// ========================================
+// PRELIMINARY FLOOD RISK CALCULATION
+// ========================================
+
+function calculateRisk(peak, p95, p99) {
+
+    if (peak >= p99) {
+        return "Barriers";
+    }
+
+    if (peak >= p95) {
+        return "Standby";
+    }
+
+    return "Normal";
+}
+
+
+// ========================================
+// DISPLAY RIVER DATA ON DASHBOARD
+// ========================================
+
+async function renderRiverData() {
+
+    const table = document.getElementById("river-table");
+
+    table.replaceChildren();
+
+    let normal = 0;
+    let standby = 0;
+    let barriers = 0;
+
+    for (const town of townResources) {
+
+        const row = document.createElement("tr");
+
+        try {
+
+            const history =
+                await loadHistoricalData(town.town);
+
+            const forecast =
+                await loadRiverForecast(town.town);
+
+            if (
+                history.latitude !== forecast.latitude ||
+                history.longitude !== forecast.longitude
+            ) {
+                throw new Error("Grid mismatch");
+            }
+
+            const risk = calculateRisk(
+                forecast.peak,
+                history.p95,
+                history.p99
+            );
+
+            if (risk === "Normal") normal++;
+            if (risk === "Standby") standby++;
+            if (risk === "Barriers") barriers++;
+
+            const values = [
+                `${town.town}, Co. ${town.county}`,
+                `${forecast.peak.toFixed(2)} m³/s`,
+                `${history.p95.toFixed(2)} m³/s`,
+                `${history.p99.toFixed(2)} m³/s`,
+                "Not checked",
+                risk,
+                "Preliminary — flow only"
+            ];
+
+            values.forEach((value, index) => {
+
+                const cell = document.createElement("td");
+
+                if (index === 5) {
+
+                    const badge =
+                        document.createElement("span");
+
+                    badge.className =
+                        `risk-badge ${risk.toLowerCase()}`;
+
+                    badge.textContent = value;
+
+                    cell.appendChild(badge);
+
+                } else {
+
+                    cell.textContent = value;
+
+                }
+
+                row.appendChild(cell);
+
+            });
+
+        } catch (error) {
+
+            const values = [
+                town.town,
+                "Unavailable",
+                "--",
+                "--",
+                "Not checked",
+                "Unknown",
+                error.message
+            ];
+
+            values.forEach(value => {
+
+                const cell = document.createElement("td");
+
+                cell.textContent = value;
+                row.appendChild(cell);
+
+            });
+        }
+
+        table.appendChild(row);
+    }
+
+    document.getElementById("normal-count").textContent =
+        String(normal).padStart(2, "0");
+
+    document.getElementById("standby-count").textContent =
+        String(standby).padStart(2, "0");
+
+    document.getElementById("critical-count").textContent =
+        String(barriers).padStart(2, "0");
+}
