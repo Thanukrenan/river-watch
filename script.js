@@ -144,7 +144,7 @@ await renderRiverData();
         updateRefreshTimestamp();
 
        document.getElementById("ai-summary").textContent =
-    "River flow and weather assessments completed where data is available. River validation and crew allocation are pending.";
+    allocateCrews();
         console.log("Google Sheet connected:", townResources);
 
     } catch (error) {
@@ -502,6 +502,7 @@ function calculateRisk(peak, p95, p99) {
 // ========================================
 
 async function renderRiverData() {
+    townAssessments = [];
 
     const table = document.getElementById("river-table");
 
@@ -587,7 +588,22 @@ const explanation =
     (rehearsal ? "REHEARSAL | " : "") +
     `Base: ${baseRisk} → ${risk}` +
     " | River validation pending";
-
+townAssessments.push({
+    town: town.town,
+    risk: risk,
+    peak: effectivePeak,
+    p95: history.p95,
+    p99: history.p99,
+    barrierSets: Number(town.barrier_sets),
+    pumps: Number(town.pumps),
+    sandbags: Number(town.sandbags),
+    staff: Number(town.staff_on_call),
+    rehearsal: rehearsal,
+    priority: history.p99 > 0
+        ? ((effectivePeak - history.p99)
+            / history.p99) * 100
+        : null
+});
             if (risk === "Normal") normal++;
             if (risk === "Standby") standby++;
             if (risk === "Barriers") barriers++;
@@ -917,5 +933,208 @@ function renderWeatherWarnings() {
         item.append(heading, description, period, regions);
 
         container.appendChild(item);
+    });
+}
+
+let townAssessments = [];
+// ========================================
+// RESPONSE CREW ALLOCATION
+// ========================================
+
+let crewPlan = [];
+let escalatedTowns = [];
+
+function allocateCrews() {
+
+    const mallow = townResources.find(
+        town => town.town === "Mallow"
+    );
+
+    const vanRestricted =
+        /van.*repair|mallow only/i.test(
+            mallow?.notes || ""
+        );
+
+    crewPlan = [
+        {
+            id: "crew-1",
+            name: "Clonmel Crew",
+            capacity: 2,
+            allowed: [
+                "Clonmel",
+                "Fermoy",
+                "Enniscorthy"
+            ],
+            assigned: []
+        },
+        {
+            id: "crew-2",
+            name: "Mallow Crew",
+            capacity: 2,
+            allowed: vanRestricted
+                ? ["Mallow"]
+                : ["Mallow", "Fermoy", "Bandon"],
+            assigned: [],
+            restriction: vanRestricted
+                ? "Van under repair — Mallow only"
+                : ""
+        },
+        {
+            id: "crew-3",
+            name: "Athlone Crew",
+            capacity: 2,
+            allowed: [
+                "Athlone",
+                "Carrick-on-Shannon",
+                "Ennis"
+            ],
+            assigned: []
+        }
+    ];
+
+    escalatedTowns = [];
+
+    const barrierDemand = townAssessments
+        .filter(town => town.risk === "Barriers")
+        .sort((a, b) =>
+            (b.priority ?? -Infinity) -
+            (a.priority ?? -Infinity) ||
+            b.peak - a.peak
+        );
+
+    for (const town of barrierDemand) {
+
+        if (
+            !Number.isFinite(town.barrierSets) ||
+            town.barrierSets < 1
+        ) {
+
+            escalatedTowns.push({
+                town: town.town,
+                reason: "No available barrier set",
+                action: "Standby measures and Area Manager escalation"
+            });
+
+            continue;
+        }
+
+        const crew = crewPlan.find(crew =>
+            crew.allowed.includes(town.town) &&
+            crew.assigned.length < crew.capacity
+        );
+
+        if (crew) {
+
+            crew.assigned.push(town.town);
+
+        } else {
+
+            escalatedTowns.push({
+                town: town.town,
+                reason: "No eligible crew capacity",
+                action: "Standby measures and Area Manager escalation"
+            });
+
+        }
+    }
+
+    renderCrewPlan();
+
+    console.table(crewPlan);
+    console.table(escalatedTowns);
+}
+
+
+// ========================================
+// DISPLAY CREW ALLOCATION
+// ========================================
+
+function renderCrewPlan() {
+
+    crewPlan.forEach(crew => {
+
+        const container =
+            document.getElementById(crew.id);
+
+        if (!container) return;
+
+        container.replaceChildren();
+
+        const heading = document.createElement("h4");
+        heading.textContent = crew.name;
+
+        const capacity = document.createElement("p");
+
+        capacity.textContent =
+            `${crew.assigned.length} / ${crew.capacity} towns allocated`;
+
+        container.append(heading, capacity);
+
+        if (crew.assigned.length === 0) {
+
+            const message = document.createElement("p");
+            message.textContent = "No barrier allocation";
+            container.appendChild(message);
+
+        } else {
+
+            crew.assigned.forEach(town => {
+
+                const message = document.createElement("p");
+
+                message.textContent =
+                    `${town} — Proposed barriers before 18:00`;
+
+                container.appendChild(message);
+            });
+        }
+
+        if (crew.restriction) {
+
+            const restriction = document.createElement("p");
+
+            restriction.textContent = crew.restriction;
+            restriction.style.color = "#A47B36";
+
+            container.appendChild(restriction);
+        }
+    });
+
+    const summary =
+        document.getElementById("ai-summary");
+
+    const rehearsal = townAssessments.some(
+        town => town.rehearsal
+    );
+
+    const allocated = crewPlan.reduce(
+        (total, crew) => total + crew.assigned.length,
+        0
+    );
+
+    const unknownCount = townResources.length -
+        townAssessments.filter(
+            town => town.risk !== "Unknown"
+        ).length;
+
+    summary.textContent =
+        (rehearsal ? "REHEARSAL MODE | " : "") +
+        `${allocated} proposed barrier allocations. ` +
+        `${escalatedTowns.length} towns require Area Manager escalation. ` +
+        `${unknownCount} towns require manual data checks. ` +
+        "River validation pending. " +
+        "Duty Officer Aoife Brennan must approve the plan by 16:00. " +
+        "AI can make mistakes; a person makes the final decision.";
+
+    escalatedTowns.forEach(town => {
+
+        const alert = document.createElement("p");
+
+        alert.textContent =
+            `${town.town}: ${town.reason}. ` +
+            "Confirm staff, check pumps, stage sandbags " +
+            "and escalate to the Area Manager.";
+
+        summary.appendChild(alert);
     });
 }
