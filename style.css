@@ -1608,4 +1608,16 @@ tbody tr:hover {
     margin-bottom: 12px;
     border-radius: 6px;
 }
+#ai-settings {
+    display: none !important;
+}
 
+#ai-settings-toggle {
+    display: none !important;
+}
+
+#chat-messages {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
