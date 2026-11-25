@@ -1953,6 +1953,7 @@ function setChatLoading(isLoading) {
 // Handle question submission
 
 
+
 chatForm.addEventListener("submit", async function(event) {
 
     event.preventDefault();
@@ -1964,19 +1965,15 @@ chatForm.addEventListener("submit", async function(event) {
     }
 
     if (question.length > 500) {
-
         addChatMessage(
             "Please keep your question within 500 characters.",
             "assistant"
         );
-
         return;
     }
 
     addChatMessage(question, "user");
-
     chatInput.value = "";
-
     setChatLoading(true);
 
     const loadingMessage = addChatMessage(
@@ -1986,81 +1983,67 @@ chatForm.addEventListener("submit", async function(event) {
 
     try {
 
-        // Refresh the operational data
-
-if (checkOutOfScope(question)) {
-
-    loadingMessage.textContent =
-        "This question is outside the scope of RiverWatch.\n\n" +
-
-        "RiverWatch provides town-level river flow " +
-        "assessments and operational flood response support. " +
-
-        "It cannot predict flooding at individual properties " +
-        "or advise on coastal flooding, road closures " +
-        "or insurance matters.\n\n" +
-
-        "Please contact your local council area office " +
-        "for specific guidance.\n\n" +
-
-        "AI can make mistakes; a person makes the final decision.";
-
-    return;
-
-}
-
         await loadGoogleSheet();
 
-        // Build the calculated decision context
+        // Handle out-of-scope questions
+
+        if (checkOutOfScope(question)) {
+
+            loadingMessage.textContent =
+                "This question is outside the scope of RiverWatch.\n\n" +
+                "RiverWatch cannot predict flooding at individual " +
+                "properties or advise on coastal flooding, road " +
+                "closures or insurance matters.\n\n" +
+                "Please contact your local council area office " +
+                "for specific guidance.\n\n" +
+                "AI can make mistakes; a person makes the final decision.";
+
+            return;
+        }
+
+        // Build calculated context
 
         const context = buildAIContext();
 
-        // Prevent advice based on incomplete data
-
         if (!context.assessmentComplete) {
 
-const hypothetical = parseHypotheticalQuestion(question);
-
-if (hypothetical) {
-
-    if (hypothetical.error) {
-
-        loadingMessage.textContent = hypothetical.error;
-
-        return;
-
-    }
-
-    const scenario =
-        calculateHypotheticalScenario(hypothetical);
-
-    if (scenario.error) {
-
-        loadingMessage.textContent = scenario.error;
-
-        return;
-
-    }
-
-    context.hypotheticalScenario = scenario;
-
-}
-
             loadingMessage.textContent =
-                "RiverSense cannot provide a reliable " +
-                "operational assessment because some river " +
-                "data is currently unavailable. " +
-                "Please try again when the data sources " +
-                "are restored.";
+                "RiverSense cannot provide a reliable operational " +
+                "assessment because some river data is currently " +
+                "unavailable. Please try again later.";
 
             return;
-
         }
+
+        // Calculate hypothetical scenario
+
+        const hypothetical =
+            parseHypotheticalQuestion(question);
+
+        if (hypothetical) {
+
+            if (hypothetical.error) {
+                loadingMessage.textContent = hypothetical.error;
+                return;
+            }
+
+            const scenario =
+                calculateHypotheticalScenario(hypothetical);
+
+            if (scenario.error) {
+                loadingMessage.textContent = scenario.error;
+                return;
+            }
+
+            context.hypotheticalScenario = scenario;
+
+            console.log("Calculated hypothetical:", scenario);
+        }
+
+        // Send calculated context to AI
 
         loadingMessage.textContent =
             "RiverSense is analysing the latest assessments...";
-
-        // Send question and calculated context
 
         const response = await fetch(AI_BACKEND_URL, {
 
@@ -2076,6 +2059,49 @@ if (hypothetical) {
             })
 
         });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "AI request failed");
+        }
+
+        if (!data.answer) {
+            throw new Error("No AI answer received");
+        }
+
+        loadingMessage.textContent = data.answer;
+
+        updateAIUsage(data.usage);
+
+        console.log("RiverSense response:", {
+            question: question,
+            model: data.model,
+            timestamp: data.timestamp,
+            usage: data.usage
+        });
+
+    } catch (error) {
+
+        loadingMessage.textContent =
+            "RiverSense could not complete your request. " +
+            "Please try again later.";
+
+        console.error("RiverSense error:", error);
+
+    } finally {
+
+        setChatLoading(false);
+
+        chatMessages.scrollTop =
+            chatMessages.scrollHeight;
+
+        chatInput.focus();
+
+    }
+
+});
+
 
         const data = await response.json();
 
