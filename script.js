@@ -2199,6 +2199,21 @@ function buildAIContext() {
 
         historicalAnalysis: winterAnalysis,
 
+floodDefenceStudy: {
+    priorityTowns: winterAnalysis.filter(
+        town => town.totalEvents === winterAnalysis[0]?.totalEvents
+    ),
+
+    selectionRule:
+        "Select the town with the highest total number of historical events, not the largest increase.",
+
+    instruction:
+        "Use the calculated priorityTowns as the primary recommendation. Report total events, first four winters, last four winters and one limitation.",
+
+    limitation:
+        "Historical high-flow events do not establish actual flood damage or the adequacy of existing defences."
+},
+
         decisionRules: {
 
             normal: "Forecast peak below P95",
