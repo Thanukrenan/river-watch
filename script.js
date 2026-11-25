@@ -2103,62 +2103,6 @@ chatForm.addEventListener("submit", async function(event) {
 });
 
 
-        const data = await response.json();
-
-        if (!response.ok) {
-
-            throw new Error(
-                data.error || "AI request failed"
-            );
-
-        }
-
-        if (!data.answer) {
-            throw new Error("No AI answer received");
-        }
-
-        // Display AI response
-
-        loadingMessage.textContent = data.answer;
-
-        // Update usage and estimated cost
-
-        updateAIUsage(data.usage);
-
-        console.log("RiverSense response:", {
-
-            question: question,
-
-            model: data.model,
-
-            timestamp: data.timestamp,
-
-            usage: data.usage
-
-        });
-
-    } catch (error) {
-
-        loadingMessage.textContent =
-            "RiverSense could not complete your request. " +
-            "Please try again later.";
-
-        console.error("RiverSense error:", error);
-
-    } finally {
-
-        setChatLoading(false);
-
-        chatMessages.scrollTop =
-            chatMessages.scrollHeight;
-
-        chatInput.focus();
-
-    }
-
-});
-
-
 function buildAIContext() {
 
     const assessments = townAssessments.map(item => ({
