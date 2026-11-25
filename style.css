@@ -1621,3 +1621,17 @@ tbody tr:hover {
     min-height: 0;
     overflow-y: auto;
 }
+/* Hide AI technical information */
+#chat-panel #ai-settings,
+#chat-panel #ai-settings-toggle,
+#chat-panel div:has(> #ai-question-count),
+#chat-panel div:has(> #ai-total-cost) {
+    display: none !important;
+}
+
+/* Expand conversation area */
+#chat-messages {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
