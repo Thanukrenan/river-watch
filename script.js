@@ -313,6 +313,61 @@ function calculatePercentile(values, percentile) {
 
 async function loadHistoricalData(town) {
 
+    if (historicalCache[town]) {
+        return historicalCache[town];
+    }
+
+    try {
+
+        if (!window.riverWatchHistoryPromise) {
+
+            window.riverWatchHistoryPromise =
+                fetch("./historical-data.json")
+                    .then(response => {
+
+                        if (!response.ok) {
+                            throw new Error("Historical file unavailable");
+                        }
+
+                        return response.json();
+                    });
+        }
+
+        const dataset = await window.riverWatchHistoryPromise;
+        const saved = dataset[town];
+
+        if (
+            saved &&
+            Array.isArray(saved.dates) &&
+            Array.isArray(saved.discharge) &&
+            saved.dates.length === 3653 &&
+            saved.discharge.length === 3653 &&
+            saved.dates[0] === "2016-01-01" &&
+            saved.dates[3652] === "2025-12-31" &&
+            saved.discharge.every(Number.isFinite) &&
+            saved.unit === "m³/s" &&
+            saved.model === "seamless_v4" &&
+            Number.isFinite(saved.latitude) &&
+            Number.isFinite(saved.longitude) &&
+            Number.isFinite(saved.p95) &&
+            Number.isFinite(saved.p99)
+        ) {
+
+            historicalCache[town] = saved;
+
+            console.log("Historical dataset loaded:", town);
+
+            return saved;
+        }
+
+    } catch (error) {
+
+        console.warn(
+            "Historical file unavailable; using existing fallback.",
+            error
+        );
+    }
+
     const station = riverStations[town];
 
     const cacheKey =
